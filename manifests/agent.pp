@@ -125,20 +125,58 @@ class newrelic_infra::agent (
         refreshonly => true,
       }
     }
+    'Windows': {
+      # Windows Section
+        $installer_url = 'https://download.newrelic.com/infrastructure_agent/windows/newrelic-infra.msi'
+        $target_file = 'c:\newrelic-infra.msi'
+
+      # Download infra-agent:
+      exec { 'download_infra_agent':
+        command  => "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest ${installer_url} -OutFile ${target_file}",
+        creates  => $target_file,
+        provider => powershell,
+      }~>
+
+      # Install infra-agent:
+      # msiexec.exe /qn /i PATH\TO\newrelic-infra.msi
+      package { 'newrelic_agent':
+        source => $target_file,
+        install_options = [ '/qn', '/i' ],
+      }~>
+
+      # Setup the infra agent config file
+      # C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml
+      # Call this module with the display_name parameter from each role (one role per instance)
+      file { 'newrelic_infra_config':
+        ensure  => file,
+        content => template('newrelic_infra/newrelic-infra.yml.erb'),
+        #notify => Service['restart_nr_infra'],
+      }~>
+
+      # Start the agent:
+      # net start newrelic-infra
+      exec { 'start_infra_agent':
+        command  => "net start newrelic-infra",
+        provider => powershell,
+        require  => File['newrelic_infra_config'],
+      }
+
     default: {
       fail('New Relic Infrastructure agent is not yet supported on this platform')
     }
   }
 
-
+  # Do this only if os::family != Windows
   # Setup agent config
-  file { '/etc/newrelic-infra.yml':
-    ensure  => 'present',
-    owner   => 'root',
-    group   => 'root',
-    mode    => '0640',
-    content => template('newrelic_infra/newrelic-infra.yml.erb'),
-    notify  => Service['newrelic-infra'] # Restarts the agent service on config changes
+  if ($::operatingsystem != 'Windows') {
+    file { '/etc/newrelic-infra.yml':
+      ensure  => 'present',
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0640',
+      content => template('newrelic_infra/newrelic-infra.yml.erb'),
+      notify  => Service['newrelic-infra'] # Restarts the agent service on config changes
+    }
   }
 
   # we use Upstart on CentOS 6 systems and derivatives, which is not the default

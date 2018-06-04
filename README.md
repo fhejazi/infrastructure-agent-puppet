@@ -104,6 +104,7 @@ package has been mirrored to another repo that's already present on the system (
 * Debian version 7 ("Wheezy") or higher
 * Red Hat Enterprise Linux (RHEL) version 6 or higher
 * Ubuntu versions 12.04._, 14.04._, and 16.04.\* (LTS versions)
+* Windows Server 2016 (Added 06/04/2018 fhejazi)
 
 ## License
 
