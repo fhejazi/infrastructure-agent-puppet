@@ -1,4 +1,4 @@
-# newrelic-infra Puppet module
+# newrelic Puppet module
 
 [![Build Status](https://travis-ci.org/newrelic/infrastructure-agent-puppet.svg?branch=master)](https://travis-ci.org/newrelic/infrastructure-agent-puppet)
 
@@ -8,23 +8,32 @@ This module installs and configures the New Relic Infrastructure agent.
 
 ## Setup
 
-### What newrelic-infra affects
+### What newrelic affects
 
 * Adds the New Relic Infrastructure package repository source
 * Installs and configures the New Relic Infrastructure agent
 
-### Beginning with newrelic-infra
+### Beginning with newrelic
 
 Declare the main `::agent` class.
 
 ## Usage
 
-All interactions with `newrelic-infra` will be done through the main `agent` class.
+All interactions with `newrelic` will be done through the main `agent` class.
 
 ### Installing the Infrastructure agent
 
 ```ruby
-class { 'newrelic_infra::agent':
+class { 'newrelic::infra':
+    ensure      => 'latest',
+    license_key => 'YOUR_LICENSE_KEY',
+}
+```
+
+### Installing the .NET agent
+
+```ruby
+class { 'newrelic::dotnet':
     ensure      => 'latest',
     license_key => 'YOUR_LICENSE_KEY',
 }
@@ -36,9 +45,9 @@ class { 'newrelic_infra::agent':
 
 #### Public Classes
 
-* [`newrelic_infra::agent`](#newrelic_infraagent): Installs and configures the Infrastructure agent.
+* [`newrelic::infra`](#newrelic_infraagent): Installs and configures the Infrastructure agent.
 
-### `newrelic_infra::agent`
+### `newrelic::infra`
 
 #### Parameters
 
@@ -94,6 +103,12 @@ Optional. A hash of agent configuration directives that are not exposed explicit
 
 Optional. A flag for omitting the New Relic package repo. Meant for environments where the `newrelic-infra`
 package has been mirrored to another repo that's already present on the system (set to `absent` to achieve this)
+
+* [`newrelic::dotnet`](#newrelic_dotnetagent): Installs and configures the .NET agent.
+
+### `newrelic::dotnet`
+
+#### Parameters
 
 ## Limitations
 
