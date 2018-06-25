@@ -1,4 +1,10 @@
-# newrelic-infra Puppet module CHANGELOG
+# newrelic Puppet module CHANGELOG
+
+## 0.6.0 (2018-06-22)
+
+IMPROVEMENTS:
+
+* Added support for Windows Server 2016 (Infra and .NET agents)
 
 ## 0.5.0 (2018-05-23)
 

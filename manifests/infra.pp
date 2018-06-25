@@ -1,4 +1,4 @@
-# == Class: newrelic_infra::agent
+# == Class: newrelic::infra
 #
 # === Required Parameters
 # [*ensure*]
@@ -39,9 +39,9 @@
 #   {'payload_compression' => 0, 'selinux_enable_semodule' => false}
 # === Authors
 #
-# New Relic, Inc.
+# @fhejazi
 #
-class newrelic_infra::agent (
+class newrelic::infra (
   $ensure               = 'latest',
   $service_ensure       = 'running',
   $license_key          = '',
@@ -75,8 +75,6 @@ class newrelic_infra::agent (
         require      => Package['apt-transport-https'],
         notify       => Exec['apt_update'],
       }
-      # work around necessary to get Puppet and Apt to get along on first run, per ticket open as of this writing
-      # https://tickets.puppetlabs.com/browse/MODULES-2190?focusedCommentId=341801&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-341801
       exec { 'newrelic_infra_apt_get_update':
         command     => 'apt-get update',
         cwd         => '/tmp',
@@ -110,14 +108,12 @@ class newrelic_infra::agent (
       }
     }
     'OpenSuSE', 'SuSE', 'SLED', 'SLES': {
-      # work around necessary because sles has a very old version of puppet and zypprepo can't not be installed
       exec { 'add_newrelic_repo':
         creates => '/etc/zypp/repos.d/newrelic-infra.repo',
         command => "/usr/bin/zypper addrepo --no-gpgcheck --repo http://download.newrelic.com/infrastructure_agent/beta/linux/zypp/sles/${::operatingsystemrelease}/x86_64/newrelic-infra.repo",
         path    => ['/usr/local/sbin', '/usr/local/bin', '/sbin', '/bin', '/usr/bin'],
         notify  => Exec['install_newrelic_agent']
       }
-      # work around necessary because pacakge doesn't have Zypp provider in the puppet SLES version 
       exec { 'install_newrelic_agent':
         command     => '/usr/bin/zypper install -y newrelic-infra',
         path        => ['/usr/local/sbin', '/usr/local/bin', '/sbin', '/bin', '/usr/bin'],
@@ -125,41 +121,40 @@ class newrelic_infra::agent (
         refreshonly => true,
       }
     }
+
     'Windows': {
       # Windows Section
         $installer_url = 'https://download.newrelic.com/infrastructure_agent/windows/newrelic-infra.msi'
-        $target_file = 'c:\newrelic-infra.msi'
+        $target_file = 'c:\windows\temp\newrelic-infra.msi'
 
       # Download infra-agent:
       exec { 'download_infra_agent':
         command  => "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest ${installer_url} -OutFile ${target_file}",
         creates  => $target_file,
         provider => powershell,
-      }~>
+      }
 
       # Install infra-agent:
-      # msiexec.exe /qn /i PATH\TO\newrelic-infra.msi
-      package { 'newrelic_agent':
+      package { 'newrelic-agent':
+        ensure => installed,
+        provider => 'windows',
         source => $target_file,
-        install_options = [ '/qn', '/i' ],
+        install_options => [ '/qn' ],
+        require => Exec['download_infra_agent'],
       }~>
 
       # Setup the infra agent config file
-      # C:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml
-      # Call this module with the display_name parameter from each role (one role per instance)
-      file { 'newrelic_infra_config':
+      file { 'newrelic-infra.yml':
+        path    => 'c:\Program Files\New Relic\newrelic-infra\newrelic-infra.yml',
         ensure  => file,
         content => template('newrelic_infra/newrelic-infra.yml.erb'),
-        #notify => Service['restart_nr_infra'],
       }~>
 
       # Start the agent:
-      # net start newrelic-infra
-      exec { 'start_infra_agent':
-        command  => "net start newrelic-infra",
-        provider => powershell,
-        require  => File['newrelic_infra_config'],
+      service { 'newrelic-infra':
+        ensure => 'running'
       }
+    }
 
     default: {
       fail('New Relic Infrastructure agent is not yet supported on this platform')
@@ -199,10 +194,12 @@ class newrelic_infra::agent (
       require => Exec['install_newrelic_agent']
     }
   } else {
-    # Setup agent service
-    service { 'newrelic-infra':
-      ensure  => $service_ensure,
-      require => Package['newrelic-infra'],
+    unless ($::operatingsystem == 'Windows') {
+      # Setup agent service
+      service { 'newrelic-infra':
+        ensure  => $service_ensure,
+        require => Package['newrelic-infra'],
+      }
     }
   }
 }

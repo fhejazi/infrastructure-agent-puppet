@@ -1,6 +1,6 @@
 {
   "name": "newrelic-newrelic_infra",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "New Relic, Inc.",
   "summary": "A Puppet module for installing New Relic Infrastructure Agent",
   "license":
@@ -33,6 +33,9 @@
     {
       "operatingsystem": "Ubuntu",
       "operatingsystemrelease": ["12.04", "14.04", "16.04"]
+    },
+    {
+      "operatingsystem": "Windows"
     }
   ],
   "requirements": [

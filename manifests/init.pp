@@ -1,8 +1,8 @@
-# == Class: newrelic_infra::init
+# == Class: newrelic::init
 #
 # === Authors
 #
-# New Relic, Inc.
+# @fhejazi
 #
-class newrelic_infra {
+class newrelic {
 }
